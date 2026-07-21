@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, tick } from 'svelte';
   import VoiceButton from './VoiceButton.svelte';
   import { askOfficeManager } from '$lib/api';
 
@@ -9,6 +9,8 @@
   let text = '';
   let busy = false;
   let error = '';
+  let fromVoice = false;
+  let textareaEl: HTMLTextAreaElement | null = null;
 
   async function send() {
     const message = text.trim();
@@ -19,6 +21,7 @@
       const res = await askOfficeManager(message, { view: view });
       dispatch('answer', { question: message, answer: res.answer, ok: res.ok });
       text = '';
+      fromVoice = false;
     } catch (e) {
       error = 'The Office Manager AI is unavailable right now.';
     } finally {
@@ -26,9 +29,16 @@
     }
   }
 
-  function onVoice(e: CustomEvent) {
+  async function onVoice(e: CustomEvent) {
+    // Editable transcript: populate the field and let the user review/edit
+    // before sending. Human confirmation stays in the loop.
     text = e.detail.text;
-    send();
+    fromVoice = true;
+    await tick();
+    if (textareaEl) {
+      textareaEl.focus();
+      textareaEl.selectionStart = textareaEl.selectionEnd = text.length;
+    }
   }
 
   function onKey(e: KeyboardEvent) {
@@ -39,65 +49,152 @@
   }
 </script>
 
-<div class="ask-bar">
-  <textarea
-    bind:value={text}
-    on:keydown={onKey}
-    placeholder="Ask your office manager, or use voice..."
-    rows="2"
-  ></textarea>
-  <div class="ask-actions">
-    <VoiceButton view={view} on:transcript={onVoice} />
-    <button class="send-btn" on:click={send} disabled={busy}>
-      {busy ? 'Thinking...' : 'Ask'}
-    </button>
+<div class="ask-card">
+  <div class="ask-head">
+    <div>
+      <h2>Ask your Office Manager</h2>
+      <p class="ask-sub">Speak or type. Review before you send — nothing happens without your confirmation.</p>
+    </div>
   </div>
+
+  <div class="ask-body">
+    <div class="voice-col">
+      <VoiceButton view={view} on:transcript={onVoice} />
+    </div>
+
+    <div class="input-col">
+      <textarea
+        bind:this={textareaEl}
+        bind:value={text}
+        on:keydown={onKey}
+        placeholder="Ask about today's schedule, approvals, leads, or dictate a note..."
+        rows="3"
+      ></textarea>
+      <div class="ask-actions">
+        {#if fromVoice}
+          <span class="transcript-flag">Transcript ready — edit if needed</span>
+        {:else}
+          <span class="hint">Press Enter to send &middot; Shift+Enter for a new line</span>
+        {/if}
+        <button class="send-btn" on:click={send} disabled={busy}>
+          {busy ? 'Thinking...' : 'Ask'}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {#if error}
+    <p class="ask-error" role="alert">{error}</p>
+  {/if}
 </div>
-{#if error}
-  <p class="ask-error" role="alert">{error}</p>
-{/if}
 
 <style>
-  .ask-bar {
+  .ask-card {
+    background: linear-gradient(180deg, var(--white), var(--cream-50));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.35rem;
+    box-shadow: var(--shadow-md);
+  }
+  .ask-head h2 {
+    font-size: 1.15rem;
+  }
+  .ask-sub {
+    margin: 0.25rem 0 0;
+    color: var(--ink-500);
+    font-size: 0.88rem;
+  }
+  .ask-body {
+    display: flex;
+    gap: 1.25rem;
+    align-items: stretch;
+    margin-top: 1rem;
+  }
+  .voice-col {
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding-right: 1.25rem;
+    border-right: 1px solid var(--line);
+  }
+  .input-col {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    background: #111827;
-    border: 1px solid #1f2937;
-    border-radius: 12px;
-    padding: 1rem;
+    min-width: 0;
   }
   textarea {
     width: 100%;
     resize: vertical;
-    background: #0b1220;
-    color: #e2e8f0;
-    border: 1px solid #1f2937;
-    border-radius: 8px;
-    padding: 0.6rem;
+    min-height: 70px;
+    background: var(--white);
+    color: var(--ink-900);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 0.9rem;
     font: inherit;
+    font-size: 1rem;
     box-sizing: border-box;
+  }
+  textarea:focus {
+    border-color: var(--gold-500);
   }
   .ask-actions {
     display: flex;
-    gap: 0.6rem;
     align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .hint {
+    color: var(--ink-500);
+    font-size: 0.78rem;
+  }
+  .transcript-flag {
+    color: var(--gold-600);
+    font-size: 0.8rem;
+    font-weight: 600;
   }
   .send-btn {
     border: none;
     border-radius: 999px;
-    padding: 0.6rem 1.3rem;
-    font-weight: 600;
-    background: #16a34a;
-    color: white;
+    padding: 0.6rem 1.6rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    background: linear-gradient(135deg, var(--navy-700), var(--navy-900));
+    color: var(--white);
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
+  }
+  .send-btn:hover {
+    background: var(--navy-800);
   }
   .send-btn:disabled {
-    background: #6b7280;
+    background: var(--ink-500);
     cursor: wait;
   }
   .ask-error {
-    color: #f87171;
-    font-size: 0.85rem;
+    color: var(--danger);
+    font-size: 0.86rem;
+    margin: 0.75rem 0 0;
+  }
+  @media (max-width: 640px) {
+    .ask-body {
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    .voice-col {
+      border-right: none;
+      padding-right: 0;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--line);
+      width: 100%;
+      justify-content: center;
+    }
+    .input-col {
+      width: 100%;
+    }
   }
 </style>
