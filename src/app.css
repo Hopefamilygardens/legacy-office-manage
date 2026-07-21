@@ -1,16 +1,33 @@
 :root {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  color-scheme: light dark;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
   background: #0f172a;
   color: #e2e8f0;
 }
 
-main {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 2rem;
+a {
+  color: #93c5fd;
+}
+
+button {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3 {
+  color: #f8fafc;
 }
