@@ -55,24 +55,38 @@
 </script>
 
 {#if supported}
-  <button
-    class="voice-btn"
-    class:recording={recording}
-    class:busy={busy}
-    on:click={toggle}
-    disabled={busy}
-    aria-label={recording ? 'Stop recording' : 'Start voice input'}
-  >
-    {#if busy}
-      Transcribing...
-    {:else if recording}
-      Stop &amp; Send
-    {:else}
-      Speak
-    {/if}
-  </button>
+  <div class="voice-wrap">
+    <button
+      class="voice-btn"
+      class:recording={recording}
+      class:busy={busy}
+      on:click={toggle}
+      disabled={busy}
+      aria-label={recording ? 'Stop recording and send' : 'Start voice input'}
+    >
+      <span class="mic-glyph" aria-hidden="true">
+        {#if busy}
+          <span class="spinner"></span>
+        {:else}
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor">
+            <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
+            <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z" />
+          </svg>
+        {/if}
+      </span>
+    </button>
+    <span class="voice-label">
+      {#if busy}
+        Transcribing...
+      {:else if recording}
+        Listening — tap to stop
+      {:else}
+        Speak
+      {/if}
+    </span>
+  </div>
 {:else}
-  <span class="voice-unsupported">Voice not supported here</span>
+  <span class="voice-unsupported">Voice input isn't supported in this browser.</span>
 {/if}
 
 {#if error}
@@ -80,30 +94,81 @@
 {/if}
 
 <style>
+  .voice-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
   .voice-btn {
-    border: none;
+    width: 76px;
+    height: 76px;
     border-radius: 999px;
-    padding: 0.6rem 1.1rem;
-    font-size: 1rem;
-    font-weight: 600;
+    border: none;
     cursor: pointer;
-    background: #2563eb;
-    color: white;
+    display: grid;
+    place-items: center;
+    color: var(--navy-900);
+    background: linear-gradient(135deg, var(--gold-400), var(--gold-600));
+    box-shadow: var(--shadow-md), inset 0 0 0 2px rgba(255, 255, 255, 0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .voice-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg), inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+  }
+  .voice-btn:active {
+    transform: translateY(0);
   }
   .voice-btn.recording {
-    background: #dc2626;
+    color: var(--white);
+    background: linear-gradient(135deg, #d1493c, var(--danger));
+    animation: pulse 1.4s ease-in-out infinite;
   }
   .voice-btn.busy {
-    background: #6b7280;
+    background: var(--navy-600);
+    color: var(--white);
     cursor: wait;
   }
+  .mic-glyph {
+    display: grid;
+    place-items: center;
+  }
+  .voice-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink-700);
+  }
   .voice-unsupported {
-    color: #9ca3af;
+    color: var(--ink-500);
     font-size: 0.85rem;
   }
   .voice-error {
-    color: #f87171;
+    color: var(--danger);
     font-size: 0.85rem;
-    margin-top: 0.4rem;
+    margin: 0.4rem 0 0;
+    text-align: center;
+  }
+  .spinner {
+    width: 26px;
+    height: 26px;
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-top-color: var(--white);
+    border-radius: 999px;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      box-shadow: var(--shadow-md), 0 0 0 0 rgba(178, 58, 46, 0.5);
+    }
+    50% {
+      box-shadow: var(--shadow-md), 0 0 0 12px rgba(178, 58, 46, 0);
+    }
   }
 </style>
