@@ -2,7 +2,7 @@
   import '../app.css';
   import { page } from '$app/stores';
 
-  // Ported from the approved Shell: left navigation with 10 product sections.
+  // Ported from the approved Shell: left navigation with 10 product sections + Knowledge Import.
   const nav = [
     { href: '/', label: 'Command Center' },
     { href: '/leads', label: 'Leads' },
@@ -13,6 +13,7 @@
     { href: '/employees', label: 'Employees' },
     { href: '/customers', label: 'Customers' },
     { href: '/documents', label: 'Documents' },
+    { href: '/import', label: 'Knowledge Import' },
     { href: '/settings', label: 'Settings' }
   ];
 
