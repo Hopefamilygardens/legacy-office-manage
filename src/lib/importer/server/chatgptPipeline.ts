@@ -22,12 +22,14 @@ interface BrainIndex {
   normalizedContent: string;
 }
 
+type ChatGptMessageContent = { parts?: string[]; text?: string } | string | undefined;
+
 interface ChatGptConversation {
   id?: string;
   title?: string;
   create_time?: number | string;
   update_time?: number | string;
-  mapping?: Record<string, { message?: { author?: { role?: string }; content?: { parts?: string[]; text?: string } | string; create_time?: number | string } }>;
+  mapping?: Record<string, { message?: { author?: { role?: string }; content?: ChatGptMessageContent; create_time?: number | string } }>;
 }
 
 export function isLocalChatGptJob(jobId: string): boolean {
@@ -181,7 +183,7 @@ function extractConversationLines(convo: ChatGptConversation): string[] {
   return lines;
 }
 
-function extractMessageText(content: ChatGptConversation['mapping'][string]['message']['content']): string {
+function extractMessageText(content: ChatGptMessageContent): string {
   if (!content) return '';
   if (typeof content === 'string') return content;
   if (Array.isArray(content.parts)) return content.parts.filter((part): part is string => typeof part === 'string').join('\n');
