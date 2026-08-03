@@ -19,7 +19,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const updated = {
       ...job,
       stage: 'committed' as const,
-      stage_message: `Committed ${committedCount} approved update${committedCount === 1 ? '' : 's'} to the Brain.`,
+      stage_message: `Committed ${committedCount} approved update${committedCount === 1 ? '' : 's'} to review output.`,
       updated_at: new Date().toISOString()
     };
     setJob(updated);
