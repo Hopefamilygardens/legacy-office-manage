@@ -6,11 +6,40 @@ import type {
   ImportDecisionResponse
 } from './types';
 
+const LOCAL_ENDPOINTS = {
+  submit: '/api/import/submit',
+  status: '/api/import/status',
+  approve: '/api/import/approve',
+  commit: '/api/import/commit'
+};
+
+const LOCAL_JOB_PREFIX = 'local-chatgpt-';
+
+function isLocalJob(jobId: string): boolean {
+  return jobId.startsWith(LOCAL_JOB_PREFIX);
+}
+
+function resolveSubmitEndpoint(prepared: PreparedImport): string {
+  return prepared.source_type === 'chatgpt-export' ? LOCAL_ENDPOINTS.submit : IMPORTER_ENDPOINTS.submit;
+}
+
+function resolveStatusEndpoint(jobId: string): string {
+  return isLocalJob(jobId) ? LOCAL_ENDPOINTS.status : IMPORTER_ENDPOINTS.status;
+}
+
+function resolveApproveEndpoint(jobId: string): string {
+  return isLocalJob(jobId) ? LOCAL_ENDPOINTS.approve : IMPORTER_ENDPOINTS.approve;
+}
+
+function resolveCommitEndpoint(jobId: string): string {
+  return isLocalJob(jobId) ? LOCAL_ENDPOINTS.commit : IMPORTER_ENDPOINTS.commit;
+}
+
 // Submit a new import job to the n8n pipeline.
 // The n8n workflow receives the PreparedImport and begins the
 // Parse → Classify → Extract → Compare → Deduplicate → Propose stages.
 export async function submitImport(prepared: PreparedImport): Promise<ImportSubmitResponse> {
-  const res = await fetch(IMPORTER_ENDPOINTS.submit, {
+  const res = await fetch(resolveSubmitEndpoint(prepared), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(prepared)
@@ -22,7 +51,8 @@ export async function submitImport(prepared: PreparedImport): Promise<ImportSubm
 // Poll the current state of an import job.
 // Returns the job including any proposed Brain updates that have been generated.
 export async function getJobStatus(jobId: string): Promise<ImportStatusResponse> {
-  const url = IMPORTER_ENDPOINTS.status + '?job_id=' + encodeURIComponent(jobId);
+  const base = resolveStatusEndpoint(jobId);
+  const url = base + '?job_id=' + encodeURIComponent(jobId);
   const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error('Import status failed: ' + res.status);
   return (await res.json()) as ImportStatusResponse;
@@ -40,7 +70,7 @@ export async function decideUpdate(
   if (updateId) payload.update_id = updateId;
   if (notes) payload.notes = notes;
 
-  const res = await fetch(IMPORTER_ENDPOINTS.approve, {
+  const res = await fetch(resolveApproveEndpoint(jobId), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(payload)
@@ -53,7 +83,7 @@ export async function decideUpdate(
 // Rule: only approved updates are written. Rejected items are discarded.
 // This is the final step; the job moves to 'committed' stage on success.
 export async function commitApproved(jobId: string): Promise<ImportDecisionResponse> {
-  const res = await fetch(IMPORTER_ENDPOINTS.commit, {
+  const res = await fetch(resolveCommitEndpoint(jobId), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({ job_id: jobId })
