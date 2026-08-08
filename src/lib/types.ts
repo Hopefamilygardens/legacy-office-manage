@@ -35,3 +35,28 @@ export interface VoiceResponse {
   message?: string;
   error_code?: string;
 }
+export interface ScheduleItem {
+  title: string;
+  start: string;
+  end: string;
+  all_day: boolean;
+  location: string;
+  calendar: string;
+  start_time_label: string;
+  status: string;
+  html_link: string;
+}
+
+export interface ScheduleGroup {
+  count: number;
+  items: ScheduleItem[];
+}
+
+export interface ScheduleResponse {
+  success: boolean;
+  generated_at: string;
+  timezone: string;
+  todays_schedule: ScheduleGroup;
+  upcoming_schedule: ScheduleGroup;
+}
+
