@@ -1,5 +1,5 @@
 import { ENDPOINTS } from './config';
-import type { BriefResponse, AiResponse } from './types';
+import type { BriefResponse, AiResponse, ScheduleResponse } from './types';
 
 // Fetch the daily brief assembled by the n8n Daily Brief API.
 export async function fetchBrief(view = 'command'): Promise<BriefResponse> {
@@ -10,7 +10,19 @@ export async function fetchBrief(view = 'command'): Promise<BriefResponse> {
   }
   return (await res.json()) as BriefResponse;
 }
+// Fetch the live Schedule view from the read-only n8n Schedule API.
+export async function fetchSchedule(): Promise<ScheduleResponse> {
+  const res = await fetch(ENDPOINTS.schedule, {
+    method: 'GET',
+    headers: { Accept: 'application/json' }
+  });
 
+  if (!res.ok) {
+    throw new Error('Schedule request failed: ' + res.status);
+  }
+
+  return (await res.json()) as ScheduleResponse;
+}
 // Ask the Office Manager AI. The backend decides context and authorization.
 export async function askOfficeManager(
   message: string,
